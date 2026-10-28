@@ -87,7 +87,7 @@
 
         :root.perf-mode .shelf-wrapper,
         body.perf-mode .shelf-wrapper {
-            background: rgba(14, 18, 28, 0.92);
+            background: rgba(14, 18, 28, 0.3);
         }
 
         :root.perf-mode .header-btn,
@@ -156,6 +156,21 @@
 
         .app-bg-layer.visible:not(.no-motion) {
             animation: bgKenBurns 26s ease-in-out infinite alternate;
+        }
+
+        /* Whole-image mode (CUSTOM_BACKGROUNDS.fitWholeImage): no overscan, no zoom,
+           letterboxed with transparent bars if the photo isn't the screen's shape. */
+        .app-bg-layer.fit {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .app-bg-layer.visible.fit {
+            animation: none;
         }
 
         @keyframes bgKenBurns {
@@ -360,63 +375,47 @@
             overflow: hidden;
         }
 
-        /* Glass App Shelf */
+        /* Glass App Dock: icon-only column pinned to the left edge */
         .shelf-wrapper {
-            background: var(--glass-shelf);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            padding: 10px 13px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-            /* The container spreads leftover height evenly (space-between), so a
-               bigger margin-top alone barely moves the shelf. Pairing it with an
-               equal negative margin-bottom shifts the shelf down 34px without
-               changing the other gaps, leaving ~40px above Trending This Week. */
-            margin-top: 264px;
-            margin-bottom: -34px;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 50%;
+            position: fixed;
+            left: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 30;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            padding: 12px;
         }
 
         .shelf-top-bar {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin-bottom: 14px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
-        .shelf-header {
-            font-size: 9px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
+        .shelf-header,
         .shelf-hint {
-            font-size: 8px;
-            color: var(--text-secondary);
+            display: none;
         }
 
         .shelf-grid {
-            /* Flexbox fallback for engines without CSS Grid (e.g. webOS 3.x /
-               Chromium 38); the display: grid line below overrides it on any
-               engine that understands grid, since it comes later in the cascade. */
             display: flex;
-            flex-wrap: wrap;
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 9px;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .app-tile {
             background: rgba(255, 255, 255, 0.05);
             border: 1.5px solid rgba(255, 255, 255, 0.1);
-            border-radius: 11px;
-            aspect-ratio: 1 / 1;
-            flex: 0 0 calc((100% - 9px * 7) / 8);
+            border-radius: 16px;
+            width: 68px;
+            height: 68px;
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -434,9 +433,9 @@
         .app-tile:hover,
         .app-tile:focus,
         .app-tile.focused {
-            transform: scale(1.04) translateY(-4px) translateZ(0);
+            transform: scale(1.25) translateX(8px) translateZ(0);
             border-color: var(--glass-focus-border);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 255, 255, 0.25);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6), 0 0 22px rgba(255, 255, 255, 0.25);
             z-index: 20;
             background: rgba(255, 255, 255, 0.17);
         }
@@ -445,7 +444,7 @@
             width: 100%;
             flex: 1;
             min-height: 0;
-            border-radius: 10px 10px 0 0;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -470,16 +469,9 @@
             overflow-wrap: break-word;
             max-width: 100%;
         }
+        /* The dock is icon-only; the hero area names the focused app */
         .app-label {
-            width: 100%;
-            padding: 6px 4px;
-            font-size: 9px;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: none;
         }
         .hdmi-options {
             /* Flexbox fallback for engines without CSS Grid; display: grid
@@ -493,6 +485,12 @@
 
         .hdmi-options .app-toggle-item {
             flex: 0 0 calc((100% - 12px) / 2);
+        }
+
+        /* Clear the left dock (32px + ~92px wide) plus room for the focus pop-out */
+        .hero-shelf,
+        .picks-section {
+            margin-left: 120px;
         }
 
         /* Trending Picks Row */
@@ -730,10 +728,10 @@
             background: rgba(255, 255, 255, 0.16);
         }
 
-        .shelf-edit-actions { display: flex; align-items: center; gap: 10px; }
+        .shelf-edit-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .shelf-edit-actions[hidden], #reorderShelfBtn[hidden] { display: none; }
-        .shelf-edit-actions button, #reorderShelfBtn { padding: 7px 14px; font-size: 14px; }
-        .app-tile.moving { outline: 3px solid #fff; transform: translateY(-8px); }
+        .shelf-edit-actions button, #reorderShelfBtn { padding: 5px 10px; font-size: 11px; border-radius: 12px; }
+        .app-tile.moving { outline: 3px solid #fff; transform: translateX(10px); }
 
         .app-tile[aria-busy="true"] { border-color: var(--accent); }
 
@@ -1267,6 +1265,11 @@
                 'amazon': 'assets/backgrounds/primevideo.jpg',
                 'com.disney.disneyplus-prod': 'assets/backgrounds/disneyplus.jpg',
                 'spotify-beehive': 'assets/backgrounds/spotify.jpg'
+            },
+            // Apps whose photo is shown whole (no crop, no slow zoom) instead of
+            // full-bleed. Good for portraits where cropping would cut off faces.
+            fitWholeImage: {
+                'spotify-beehive': true
             }
         };
 
@@ -1905,6 +1908,7 @@
                 btn.setAttribute('aria-label', title + (device.title ? ' — ' + app.title : ''));
                 btn.dataset.color = app.color;
                 btn.dataset.bg = CUSTOM_BACKGROUNDS.apps[app.id] || '';
+                if (CUSTOM_BACKGROUNDS.fitWholeImage[app.id]) btn.dataset.bgFit = '1';
 
                 var iconDiv = document.createElement('div');
                 iconDiv.className = 'app-icon';
@@ -1946,7 +1950,7 @@
                 grid.appendChild(btn);
             });
 
-            document.getElementById('shelfCountHint').textContent = shelfEdit ? (movingTileId ? '← / → Move • OK Place • Back Cancel' : 'Select a tile • OK Pick up • Done to save') : favItems.length + ' Apps • Instant Launch';
+            document.getElementById('shelfCountHint').textContent = shelfEdit ? (movingTileId ? '↑ / ↓ Move • OK Place • Back Cancel' : 'Select a tile • OK Pick up • Done to save') : favItems.length + ' Apps • Instant Launch';
             refreshMainNavList();
         }
 
@@ -2060,8 +2064,9 @@
         // Shows `path` on the hidden layer, fades it in, fades the old one out.
         // Falls back to the theme gradient (no photo) if the file is missing or
         // Custom Backgrounds is turned off in Customize > Backgrounds.
-        function setAppBackground(path) {
+        function setAppBackground(path, fit) {
             var resolved = (state.customBg === 'on') ? (path || CUSTOM_BACKGROUNDS.default || '') : '';
+            fit = !!(fit && path);
             if (resolved === currentBgPath) return;
             currentBgPath = resolved;
 
@@ -2076,6 +2081,7 @@
 
             function show() {
                 incoming.classList.toggle('no-motion', state.kenBurns !== 'on');
+                incoming.classList.toggle('fit', fit);
                 incoming.style.backgroundImage = "url('" + resolved + "')";
                 incoming.classList.add('visible');
                 outgoing.classList.remove('visible');
@@ -2120,7 +2126,7 @@
                 ambientGlow.style.background = 'radial-gradient(circle, ' + color + '35 0%, rgba(0,0,0,0) 70%)';
             }
 
-            setAppBackground(item.dataset.bg || '');
+            setAppBackground(item.dataset.bg || '', item.dataset.bgFit === '1');
         }
 
         // Geometric (position-based) focus movement for Up/Down: finds the nearest
@@ -2159,6 +2165,36 @@
             nearestRow.sort(function(a, b) { return a.dx - b.dx; });
 
             curIndex = nearestRow[0].idx;
+            setMainFocus(mainNavItems[curIndex]);
+        }
+
+        // Geometric Left/Right, the counterpart of moveFocusVertical. Index order
+        // stopped matching the screen once the app shelf became a vertical dock
+        // (Right on a dock icon would step to the icon below it), so prefer the
+        // nearest item on the same row, otherwise the closest item in that direction.
+        function moveFocusHorizontal(dir) {
+            var current = mainNavItems[curIndex];
+            if (!current) return;
+            var cur = current.getBoundingClientRect();
+            var curX = cur.left + cur.width / 2;
+            var curY = cur.top + cur.height / 2;
+
+            var candidates = [];
+            mainNavItems.forEach(function(el, idx) {
+                if (idx === curIndex) return;
+                var r = el.getBoundingClientRect();
+                var dx = (r.left + r.width / 2 - curX) * dir;
+                if (dx <= 24) return;
+                var sameRow = r.top < cur.bottom && r.bottom > cur.top;
+                candidates.push({ idx: idx, dx: dx, sameRow: sameRow, dist: dx + 2 * Math.abs(r.top + r.height / 2 - curY) });
+            });
+            if (!candidates.length) return;
+
+            var row = candidates.filter(function(c) { return c.sameRow; });
+            if (row.length) row.sort(function(a, b) { return a.dx - b.dx; });
+            else (row = candidates).sort(function(a, b) { return a.dist - b.dist; });
+
+            curIndex = row[0].idx;
             setMainFocus(mainNavItems[curIndex]);
         }
 
@@ -2444,9 +2480,9 @@
                     finishShelfEdit(false); e.preventDefault(); return;
                 }
                 if (movingTileId) {
-                    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                        moveShelfTile(e.key === 'ArrowLeft' ? -1 : 1);
-                    } else if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        moveShelfTile(e.key === 'ArrowUp' ? -1 : 1);
+                    } else if (e.key === 'Enter' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                         var id = movingTileId;
                         movingTileId = null;
                         renderAppsShelf();
@@ -2498,12 +2534,10 @@
 
             // Main Dashboard Spatial Navigation
             if (e.key === 'ArrowRight') {
-                curIndex = (curIndex + 1) % mainNavItems.length;
-                setMainFocus(mainNavItems[curIndex]);
+                moveFocusHorizontal(1);
                 e.preventDefault();
             } else if (e.key === 'ArrowLeft') {
-                curIndex = (curIndex - 1 + mainNavItems.length) % mainNavItems.length;
-                setMainFocus(mainNavItems[curIndex]);
+                moveFocusHorizontal(-1);
                 e.preventDefault();
             } else if (e.key === 'ArrowDown') {
                 moveFocusVertical(1);
