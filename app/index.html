@@ -369,7 +369,12 @@
             border-radius: 14px;
             padding: 10px 13px;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-            margin-top: 230px;
+            /* The container spreads leftover height evenly (space-between), so a
+               bigger margin-top alone barely moves the shelf. Pairing it with an
+               equal negative margin-bottom shifts the shelf down 34px without
+               changing the other gaps, leaving ~40px above Trending This Week. */
+            margin-top: 264px;
+            margin-bottom: -34px;
             margin-left: auto;
             margin-right: auto;
             max-width: 50%;
