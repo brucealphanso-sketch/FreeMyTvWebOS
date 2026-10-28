@@ -133,6 +133,57 @@
             z-index: 1;
         }
 
+        /* Custom Backgrounds — per-app and default OS wallpaper.
+           Two stacked layers crossfade so switching focus never pops/flashes. */
+        .app-bg-layer {
+            position: absolute;
+            top: -4%;
+            left: -4%;
+            right: -4%;
+            bottom: -4%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.1s ease;
+            z-index: 0;
+            pointer-events: none;
+            will-change: opacity, transform;
+        }
+
+        .app-bg-layer.visible {
+            opacity: 1;
+        }
+
+        .app-bg-layer.visible:not(.no-motion) {
+            animation: bgKenBurns 26s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgKenBurns {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.07) translate(-1.2%, -1%); }
+        }
+
+        .app-bg-scrim {
+            position: absolute;
+            inset: -4%;
+            background: linear-gradient(180deg, rgba(4, 6, 12, 0.30) 0%, rgba(4, 6, 12, 0.55) 55%, rgba(4, 6, 12, 0.88) 100%);
+            z-index: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        .app-bg-scrim.hidden {
+            opacity: 0;
+        }
+
+        :root.perf-mode .app-bg-layer {
+            transition: opacity 0.5s ease;
+        }
+
+        :root.perf-mode .app-bg-layer.visible {
+            animation: none;
+        }
+
         .container {
             position: relative;
             z-index: 10;
@@ -931,6 +982,9 @@
     </script>
 </head>
 <body>
+    <div class="app-bg-layer" id="appBgA"></div>
+    <div class="app-bg-layer" id="appBgB"></div>
+    <div class="app-bg-scrim" id="appBgScrim"></div>
     <div class="ambient-glow" id="ambientGlow"></div>
     <div class="toast-msg" id="toastMsg" role="status" aria-live="polite">Launching...</div>
 
@@ -1056,6 +1110,34 @@
                 </div>
             </div>
 
+            <div>
+                <div class="modal-section-title">4. Backgrounds</div>
+                <p style="color: var(--text-secondary); margin: 0 0 12px;">Per-app photo backgrounds are set in the app's source (CUSTOM_BACKGROUNDS) — these just control how they behave on screen.</p>
+                <div class="settings-row">
+                    <div class="field-group">
+                        <label>Custom Backgrounds</label>
+                        <select class="field-input modal-nav" id="cfgCustomBg">
+                            <option value="on">On — Photo per app</option>
+                            <option value="off">Off — Theme gradient only</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Background Motion</label>
+                        <select class="field-input modal-nav" id="cfgKenBurns">
+                            <option value="on">Slow Zoom (Ken Burns)</option>
+                            <option value="off">Static</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Darkening Scrim</label>
+                        <select class="field-input modal-nav" id="cfgBgScrim">
+                            <option value="on">On — Keep text readable</option>
+                            <option value="off">Off — Full brightness</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-actions">
                 <button class="btn-secondary modal-nav" id="resetDefaultBtn">Reset Defaults</button>
                 <button class="btn-secondary modal-nav" id="closeModalBtn">Cancel</button>
@@ -1135,6 +1217,49 @@
             { id: 'com.disney.disneyplus-prod', title: 'Disney+', tag: 'Streaming', desc: 'Disney, Pixar, Marvel, Star Wars, and National Geographic.', color: '#113ccf', badge: 'D+', bg: 'linear-gradient(135deg, #113ccf, #071961)' },
             { id: 'spotify-beehive', title: 'Spotify', tag: 'Music', desc: 'Listen to millions of songs, albums, and podcasts on your TV.', color: '#1db954', badge: 'SP', bg: 'linear-gradient(135deg, #1db954, #0f7833)' }
         ];
+
+        // ============================================================================
+        // CUSTOM BACKGROUNDS — this is the only block you need to edit to make the
+        // home screen and every app tile use your own images.
+        //
+        // 1. Drop your image files into app/assets/backgrounds/ (jpg/png/webp, ideally
+        //    1920x1080+, landscape). Keep file sizes reasonable (under ~2MB each) so
+        //    they load instantly on the TV.
+        // 2. List them below. `default` is shown on the home screen before anything is
+        //    focused (and for any app you leave blank). Each entry under `apps` is
+        //    shown full-bleed, with a crossfade, the moment that app's tile gets focus.
+        // 3. Leave a value as '' to fall back to the theme's default gradient instead
+        //    of a photo for that app.
+        // 4. Re-run scripts/build.py (or ares-package) after editing so the new files
+        //    get bundled into the .ipk.
+        // ============================================================================
+        var CUSTOM_BACKGROUNDS = {
+            // Shown on first load / whenever a focused tile has no background of its own.
+            default: 'assets/backgrounds/default.jpg',
+            // Slow zoom/pan while a background is showing. Turn off in Customize > Backgrounds
+            // if you prefer it static, or edit this default.
+            kenBurnsDefault: true,
+            // Dark gradient over every custom background so text/icons stay readable.
+            // Turn off in Customize > Backgrounds, or edit this default.
+            scrimDefault: true,
+            apps: {
+                'youtube.leanback.v4': 'assets/backgrounds/youtube.jpg',
+                'netflix': 'assets/backgrounds/netflix.jpg',
+                'cdp-30': 'assets/backgrounds/plex.jpg',
+                'com.crunchyroll.webapp': 'assets/backgrounds/crunchyroll.jpg',
+                'globoplaywebos': 'assets/backgrounds/globoplay.jpg',
+                'com.webos.app.hdmi1': 'assets/backgrounds/hdmi1.jpg',
+                'com.webos.app.hdmi2': 'assets/backgrounds/hdmi2.jpg',
+                'com.webos.app.hdmi3': 'assets/backgrounds/hdmi3.jpg',
+                'com.webos.app.hdmi4': 'assets/backgrounds/hdmi4.jpg',
+                'com.webos.app.browser': 'assets/backgrounds/browser.jpg',
+                'org.webosbrew.hbchannel': 'assets/backgrounds/homebrew.jpg',
+                'com.webos.app.mediadiscovery': 'assets/backgrounds/mediaplayer.jpg',
+                'amazon': 'assets/backgrounds/primevideo.jpg',
+                'com.disney.disneyplus-prod': 'assets/backgrounds/disneyplus.jpg',
+                'spotify-beehive': 'assets/backgrounds/spotify.jpg'
+            }
+        };
 
         // Device artwork is bundled inline so HDMI tiles also work offline.
         var DEVICE_PRESETS = [
@@ -1231,6 +1356,9 @@
             theme: localStorage.getItem('fmtv_theme') || 'auto',
             clockFormat: localStorage.getItem('fmtv_clock_format') || '24h',
             perfMode: localStorage.getItem('fmtv_perf_mode') || 'standard',
+            customBg: localStorage.getItem('fmtv_custom_bg') || 'on',
+            kenBurns: localStorage.getItem('fmtv_ken_burns') || (CUSTOM_BACKGROUNDS.kenBurnsDefault ? 'on' : 'off'),
+            bgScrim: localStorage.getItem('fmtv_bg_scrim') || (CUSTOM_BACKGROUNDS.scrimDefault ? 'on' : 'off'),
             tmdbKey: localStorage.getItem('fmtv_tmdb_key') || '',
             catalog: DEFAULT_CATALOG.slice(),
             picksTab: 'movies',
@@ -1767,6 +1895,7 @@
                 btn.dataset.desc = device.title ? 'Play ' + device.title + ' on ' + app.title + '.' : app.desc;
                 btn.setAttribute('aria-label', title + (device.title ? ' — ' + app.title : ''));
                 btn.dataset.color = app.color;
+                btn.dataset.bg = CUSTOM_BACKGROUNDS.apps[app.id] || '';
 
                 var iconDiv = document.createElement('div');
                 iconDiv.className = 'app-icon';
@@ -1908,6 +2037,51 @@
         var heroDesc = document.getElementById('heroDesc');
         var ambientGlow = document.getElementById('ambientGlow');
 
+        // --- Custom Backgrounds: crossfade engine ---
+        var bgScrimEl = document.getElementById('appBgScrim');
+        var bgLayerEls = [document.getElementById('appBgA'), document.getElementById('appBgB')];
+        var activeBgLayer = 0;
+        var currentBgPath = null; // null = nothing resolved yet, so the very first focus always paints.
+        var bgImageCache = {};    // path -> true (already verified it loads) / false (known missing)
+
+        function applyBgScrimVisibility() {
+            bgScrimEl.classList.toggle('hidden', state.bgScrim !== 'on');
+        }
+
+        // Shows `path` on the hidden layer, fades it in, fades the old one out.
+        // Falls back to the theme gradient (no photo) if the file is missing or
+        // Custom Backgrounds is turned off in Customize > Backgrounds.
+        function setAppBackground(path) {
+            var resolved = (state.customBg === 'on') ? (path || CUSTOM_BACKGROUNDS.default || '') : '';
+            if (resolved === currentBgPath) return;
+            currentBgPath = resolved;
+
+            var incoming = bgLayerEls[1 - activeBgLayer];
+            var outgoing = bgLayerEls[activeBgLayer];
+
+            if (!resolved) {
+                outgoing.classList.remove('visible');
+                incoming.classList.remove('visible');
+                return;
+            }
+
+            function show() {
+                incoming.classList.toggle('no-motion', state.kenBurns !== 'on');
+                incoming.style.backgroundImage = "url('" + resolved + "')";
+                incoming.classList.add('visible');
+                outgoing.classList.remove('visible');
+                activeBgLayer = 1 - activeBgLayer;
+            }
+
+            if (bgImageCache[resolved] === true) { show(); return; }
+            if (bgImageCache[resolved] === false) { currentBgPath = ''; return; }
+
+            var probe = new Image();
+            probe.onload = function() { bgImageCache[resolved] = true; show(); };
+            probe.onerror = function() { bgImageCache[resolved] = false; currentBgPath = ''; };
+            probe.src = resolved;
+        }
+
         function refreshMainNavList() {
             mainNavItems = toArray(document.querySelectorAll(shelfEdit ? '.shelf-wrapper .nav-item' : '.nav-item')).filter(function(el) { return el.offsetParent !== null; });
             if (mainNavItems.length > 0) {
@@ -1936,6 +2110,8 @@
             if (state.perfMode !== 'high') {
                 ambientGlow.style.background = 'radial-gradient(circle, ' + color + '35 0%, rgba(0,0,0,0) 70%)';
             }
+
+            setAppBackground(item.dataset.bg || '');
         }
 
         // Geometric (position-based) focus movement for Up/Down: finds the nearest
@@ -1993,6 +2169,9 @@
             document.getElementById('cfgClockFormat').value = state.clockFormat;
             document.getElementById('cfgPerfMode').value = state.perfMode;
             document.getElementById('cfgTmdbKey').value = state.tmdbKey;
+            document.getElementById('cfgCustomBg').value = state.customBg;
+            document.getElementById('cfgKenBurns').value = state.kenBurns;
+            document.getElementById('cfgBgScrim').value = state.bgScrim;
 
             renderAppSelectorGrid();
             settingsModal.classList.add('active');
@@ -2198,6 +2377,9 @@
             document.getElementById('cfgClockFormat').value = '24h';
             document.getElementById('cfgPerfMode').value = 'standard';
             document.getElementById('cfgTmdbKey').value = '';
+            document.getElementById('cfgCustomBg').value = 'on';
+            document.getElementById('cfgKenBurns').value = CUSTOM_BACKGROUNDS.kenBurnsDefault ? 'on' : 'off';
+            document.getElementById('cfgBgScrim').value = CUSTOM_BACKGROUNDS.scrimDefault ? 'on' : 'off';
             renderAppSelectorGrid();
             refreshModalNavList();
             showToast('Defaults restored');
@@ -2212,6 +2394,9 @@
             state.clockFormat = document.getElementById('cfgClockFormat').value;
             state.perfMode = document.getElementById('cfgPerfMode').value;
             state.tmdbKey = document.getElementById('cfgTmdbKey').value.trim();
+            state.customBg = document.getElementById('cfgCustomBg').value;
+            state.kenBurns = document.getElementById('cfgKenBurns').value;
+            state.bgScrim = document.getElementById('cfgBgScrim').value;
 
             localStorage.setItem('fmtv_favorites', JSON.stringify(state.favorites));
             localStorage.setItem('fmtv_city', state.city);
@@ -2219,13 +2404,19 @@
             localStorage.setItem('fmtv_clock_format', state.clockFormat);
             localStorage.setItem('fmtv_perf_mode', state.perfMode);
             localStorage.setItem('fmtv_tmdb_key', state.tmdbKey);
+            localStorage.setItem('fmtv_custom_bg', state.customBg);
+            localStorage.setItem('fmtv_ken_burns', state.kenBurns);
+            localStorage.setItem('fmtv_bg_scrim', state.bgScrim);
 
             applyPerfMode();
+            applyBgScrimVisibility();
             renderAppsShelf();
             applyTheme();
             updateClock();
             fetchWeather();
             fetchTrendingPicks();
+            currentBgPath = null; // force a repaint in case toggles changed what should show
+            setAppBackground(mainNavItems[curIndex] ? mainNavItems[curIndex].dataset.bg || '' : '');
             closeSettingsModal();
             showToast('Saved & Applied!');
         });
@@ -2321,6 +2512,7 @@
 
         // --- Boot Sequence ---
         applyPerfMode();
+        applyBgScrimVisibility();
         renderAppsShelf();
         renderPicks(FALLBACK_MOVIES);
         applyTheme();
